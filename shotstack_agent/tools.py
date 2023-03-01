@@ -34,6 +34,37 @@ def change_caption_color(query: str) -> str:
     # return f"caption color changed to {query}."
 
 
+@tool("trim_video")
+def trim_video(query: str) -> str:
+    """trim the video to 'query' seconds."""
+
+    generated = f"""
+    video_asset.trim = {query}
+
+    """
+
+    with open('generated_code.py', 'a') as f:
+        f.write(generated)
+    
+    return None
+
+
+@tool("add_transition")
+def add_transition(query: str) -> str:
+    """add a 'query' transition at the end,for example fade"""
+
+    generated = f"""
+    transition = Transition(
+        out = "{query}"
+    )
+
+    """
+
+    with open('generated_code.py', 'a') as f:
+        f.write(generated)
+    
+    return None
+
 @tool("render video")
 def render_video(query: str) -> str:
     """rendering the video finally."""
@@ -47,8 +78,18 @@ def render_video(query: str) -> str:
         effect = "zoomIn"
     )
 
+    video_clip_track = Clip(
+        asset  = video_asset,
+        start  = 0.0,
+        length = 5.0,
+        transition = transition
+    )
+
     title_track = Track(clips=[title_track])
+    video_clip_track = Track(clips=[video_clip_track])
+
     tracks.append(title_track)
+    tracks.append(video_clip_track)
 
     timeline = Timeline(
         background = "#000000",

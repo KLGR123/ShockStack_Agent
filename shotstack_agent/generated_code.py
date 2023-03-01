@@ -6,6 +6,7 @@ import time
 
 from shotstack_sdk.model.soundtrack  import Soundtrack
 from shotstack_sdk.model.image_asset import ImageAsset
+from shotstack_sdk.model.video_asset import VideoAsset
 from shotstack_sdk.api               import edit_api
 from shotstack_sdk.model.clip        import Clip
 from shotstack_sdk.model.track       import Track
@@ -13,6 +14,7 @@ from shotstack_sdk.model.timeline    import Timeline
 from shotstack_sdk.model.output      import Output
 from shotstack_sdk.model.edit        import Edit
 from shotstack_sdk.model.title_asset import TitleAsset
+from shotstack_sdk.model.transition import Transition
 
 host = "https://api.shotstack.io/stage"
 
@@ -34,11 +36,19 @@ with shotstack.ApiClient(configuration) as api_client:
         size  = "medium",
         position = "bottom"
     )
+    video_asset = VideoAsset(
+        src = "https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/footage/skater.hd.mp4"
+    )
 
-    title_asset.text = 'hello hello test'
+    transition = Transition()
+
+
+    video_asset.trim = 2.5
 
     
-    title_asset.color = '#0000FF'
+    transition = Transition(
+        out = "fade"
+    )
 
     
 
@@ -49,8 +59,18 @@ with shotstack.ApiClient(configuration) as api_client:
         effect = "zoomIn"
     )
 
+    video_clip_track = Clip(
+        asset  = video_asset,
+        start  = 0.0,
+        length = 5.0,
+        transition = transition
+    )
+
     title_track = Track(clips=[title_track])
+    video_clip_track = Track(clips=[video_clip_track])
+
     tracks.append(title_track)
+    tracks.append(video_clip_track)
 
     timeline = Timeline(
         background = "#000000",
