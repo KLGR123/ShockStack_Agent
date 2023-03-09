@@ -7,6 +7,11 @@ from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
 from langchain.memory import ConversationBufferMemory
 from langchain import LLMChain
 
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Qdrant, Chroma
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.document_loaders import TextLoader
+
 from tools import text_agent, subtitle_agent, video_agent, image_agent, timeline_config_agent, output_config_agent, render_video
 
 # https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/footage/skater.hd.mp4
@@ -60,7 +65,7 @@ if __name__ == "__main__":
     When you add transition to video, use the video_agent. When you add transition to image, use the image_agent.
     You have access to the following tools: """
 
-    suffix = """Now, begin.
+    suffix = """You must input the query with the format 'parameter 1, parameter 2, ...'. Now, begin.
 
     {chat_history}
     Objective: {input}
@@ -85,17 +90,29 @@ if __name__ == "__main__":
 
     # query = """first add a video from url 'https://shotstack-assets.s3.ap-southeast-2.amazonaws.com/examples/picture-in-picture/code.mp4', make it start from 3 sec and end at 7 sec, and name it 'code'. Then add a text with content 'Coding Forever', and let it begin at 0 and end at 7 sec, and change this text's background color to light purple. Also, add a 'zoom' transition in the beginning of that video 'code', and finally render it."""
     # query = """can you upload a video from 'https://shotstack-assets.s3.ap-southeast-2.amazonaws.com/examples/picture-in-picture/commentary.mp4', trim it starting from 12 sec. For subtitle, first change its word to 'buffalo buffalo buffalo', then its color to dark purple, and adjust its start time to 1 sec and last for 1 sec there. For the text in video, write as 'Handsome Man'. And about the image please crop half of its left and a quarter of its bottom, and give a reveal transition to it. Finally, render the video."""
-    query = "add a video from url https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/footage/skater.hd.mp4, make it start from 0 sec and last for 5 sec, and name it 'skator'. Then add a text with content 'Sport Time', and let it begin at 0 and end at 7 sec."
-    query += " then render the video."
-    agent_chain.run(input=query)
+     #query = "add a video from url https://s3-ap-southeast-2.amazonaws.com/shotstack-assets/footage/skater.hd.mp4, make it start from 0 sec and last for 5 sec, and name it 'skator'. Then add a text with content 'Sport Time', and let it begin at 0 and end at 7 sec."
+    # query += " then render the video."
+    # agent_chain.run(input=query)
 
     # base_prompt = f"""Now, the objective is: {query}"""
     # agent.run(base_prompt)
+
+    embeddings = OpenAIEmbeddings()
+    loader = TextLoader('./tools.txt')
+    docs = loader.load()
+    text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=20)
+    tools_texts = text_splitter.split_documents(docs)
+    tool_db = Chroma.from_documents(tools_texts, embeddings, collection_name="tool_test")
 
     while True:
         query = input("QUERY: ")
         if query == 'quit':
             break
         else:
-            query += " then render the video."
+            docs = tool_db.similarity_search(query)
+            print("------------------------------")
+            # print("the tool recommend from tools.py: " + "\n" + docs[0].page_content)
+            
+            query += " then render the video using render_video."
+            
             agent_chain.run(input=query)

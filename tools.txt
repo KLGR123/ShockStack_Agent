@@ -1,43 +1,3 @@
-from langchain.agents import tool
-from langchain.agents import initialize_agent
-from langchain.llms import PromptLayerOpenAI
-
-import shotstack_sdk as shotstack
-import os, sys
-import requests
-import time
-
-import pickle
-from collections import OrderedDict
-
-from shotstack_sdk.model.soundtrack  import Soundtrack
-from shotstack_sdk.model.image_asset import ImageAsset
-from shotstack_sdk.model.video_asset import VideoAsset
-from shotstack_sdk.api               import edit_api
-from shotstack_sdk.model.clip        import Clip
-from shotstack_sdk.model.crop        import Crop
-from shotstack_sdk.model.track       import Track
-from shotstack_sdk.model.timeline    import Timeline
-from shotstack_sdk.model.output      import Output
-from shotstack_sdk.model.edit        import Edit
-from shotstack_sdk.model.title_asset import TitleAsset
-from shotstack_sdk.model.transition import Transition
-
-video_and_image_clip_dict = OrderedDict()
-subtitle_clip_dict = OrderedDict()
-text_clip_dict = OrderedDict()
-tracks = []
-
-timeline = Timeline(background="#000000", tracks=tracks)
-output = Output(format="mp4", resolution="sd")
-
-
-# with open('./render/clips.pkl', 'rb') as f:
-#     video_and_image_clip_dict, subtitle_clip_dict, text_clip_dict = pickle.load(f)
-# with open('./render/tracks.pkl', 'rb') as f:
-#     saved_tracks = pickle.load(f)
-
-
 @tool("change_timeline_background_color")
 def change_timeline_background_color(query: str) -> str:
     """change the timeline's background color. For example, to change the timeline background color to Silver, the query should be '#C0C0C0'.
@@ -1144,7 +1104,6 @@ def render_video(query: str) -> str:
             video_and_image_track = Track(clips=[video_and_image_clip])
             tracks.append(video_and_image_track)
 
-        timeline.tracks = tracks
         edit = Edit(timeline=timeline, output=output)
 
         try:
@@ -1190,22 +1149,3 @@ def render_video(query: str) -> str:
             print(f"Unable to resolve API call: {e}")
 
     return "video rendered successfully."
-
-
-llm1 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-text_agent = initialize_agent([add_text, change_text_color, change_text_background_color, change_text_style, change_text, change_text_size, change_text_effect, change_text_opacity, rotate_text, skew_text, flip_text, change_text_position, change_text_time, change_text_offset, add_text_transition], llm1, agent="zero-shot-react-description", verbose=True)
-
-llm2 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-subtitle_agent = initialize_agent([add_subtitle, change_subtitle, change_subtitle_time, change_subtitle_color, change_subtitle_style, change_subtitle_position, change_subtitle_size, change_subtitle_background_color, change_subtitle_offset], llm2, agent="zero-shot-react-description", verbose=True)
-
-llm3 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-video_agent = initialize_agent([add_video, change_video_volume, change_video_volume_effect, trim_video, add_video_transition, crop_video, change_video_time, scale_video, set_video_position, change_video_offset, change_video_effect, add_video_filter, set_video_opacity, rotate_video, skew_video, flip_video, video_move_foward, video_move_backward], llm3, agent="zero-shot-react-description", verbose=True)
-
-llm4 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-image_agent = initialize_agent([add_image, crop_image, add_image_transition, change_image_time, scale_image, set_image_position, change_image_offset, change_image_effect, add_image_filter, set_image_opacity, rotate_image, skew_image, flip_image, image_move_foward, image_move_backward], llm4, agent="zero-shot-react-description", verbose=True)
-
-llm5 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-timeline_config_agent = initialize_agent([change_timeline_background_color, add_timeline_soundtrack, change_timeline_soundtrack_effect, change_timeline_soundtrack_volume, choose_poster_from_timeline, choose_thumbnail_from_timeline], llm5, agent="zero-shot-react-description", verbose=True)
-
-llm6 = PromptLayerOpenAI(temperature=0, pl_tags=["shotstack_subagent"])
-output_config_agent = initialize_agent([change_output_format, change_output_resolution, change_output_aspectRatio, change_output_fps, change_output_quality, set_output_repeat, set_output_mute], llm6, agent="zero-shot-react-description", verbose=True)
